@@ -1,0 +1,34 @@
+node_modules/
+.env
+.env.local
+.env.*.local
+
+# rendered + downloaded media (large, regenerable)
+output/
+/tmp/reels/
+
+# music alternates — spare tracks not used by any active channel
+# (the 4 active music files in assets/music/ ARE committed for instant clone-to-working)
+assets/music/alternates/
+
+# WSL Windows-download metadata
+*:Zone.Identifier
+*.Zone.Identifier
+
+# stray notes / scratch files in asset dirs
+assets/**/*.csv
+assets/**/*.txt
+
+# OS / editor
+.DS_Store
+*.log
+.vscode/
+.idea/
+
+# python / TTS cache
+__pycache__/
+*.pyc
+
+# build artifacts
+dist/
+build/
