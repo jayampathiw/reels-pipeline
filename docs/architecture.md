@@ -30,10 +30,10 @@ At launch, four channels split across two FB pages:
 
 | Channel | Page (envKey) |
 |---|---|
-| `wildlife/factual/EN`   | `WILDLIFE_DAILY` |
-| `wildlife/listicle/EN`  | `WILDLIFE_DAILY` |
-| `wildlife/cinematic/EN` | `WILD_CINEMA` |
-| `wildlife/silent/EN`    | `WILD_CINEMA` |
+| `wildlife/factual/EN`   | `NATURE_PULSE` |
+| `wildlife/listicle/EN`  | `NATURE_PULSE` |
+| `wildlife/cinematic/EN` | `NATURE_FRAME` |
+| `wildlife/silent/EN`    | `NATURE_FRAME` |
 
 This lets each Page build a coherent brand (informational vs cinematic) while giving us two adjacent style variants per Page to test for engagement.
 
@@ -167,7 +167,7 @@ Open. Decide based on what M2-M6 teaches.
 | 2026-05-26 | Same Supabase project | Free-tier DB is plentiful for metadata; one dashboard reads both. |
 | 2026-05-26 | Cloudflare R2 for video storage | Supabase free Storage too small; R2 has 10GB free + zero egress, purpose-built. |
 | 2026-05-26 | `niche/style/LANG` channel key | Three-dimensional key — niche, style, language. Each (style) gets its own channel so the renderer + audience are coherent; multiple channels can share an FB Page via shared `envKey`. |
-| 2026-05-26 | 4 styles → 2 FB Pages | Wildlife Daily carries factual + listicle; Wild Cinema carries cinematic + silent. Cuts ops overhead in half vs 4 pages while preserving clean brand voice per page. |
+| 2026-05-26 | 4 styles → 2 FB Pages | NaturePulse carries factual + listicle; NatureFrame carries cinematic + silent. Cuts ops overhead in half vs 4 pages while preserving clean brand voice per page. |
 | 2026-05-26 | Worked-example in Claude system prompt | Opus 4.7 freelanced into a richer schema (per-clip voiceover, editing notes, etc.) until we added a complete example response + explicit DO-NOT-add-these-keys list. Schema-by-example is more reliable than schema-by-description with Opus. |
 | 2026-05-26 | `description` is nice-to-have, not required | Opus consistently omitted it; we derive from `title` when missing. Avoids fighting the model on a field that adds little signal. |
 | 2026-05-26 | FB API publish deferred — manual upload first | Decision was to validate content quality + engagement before investing in FB Developer app setup, Page tokens, and rate-limit handling. The publisher code is written and tested-by-shape; activating it is later flip-the-switch work, not new development. Workflow until then: render via `generate-reel.js`, upload from R2 URL via FB's web uploader. |

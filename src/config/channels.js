@@ -6,7 +6,7 @@
 // Adding a new channel = add a block here. No other code changes needed.
 
 export const CHANNELS = {
-  // ── Wildlife Daily page (factual + listicle) ──────────────────────────────
+  // ── NaturePulse page (factual + listicle) ────────────────────────────────
   'wildlife/factual/EN': {
     niche: 'wildlife',
     style: 'factual',
@@ -28,16 +28,16 @@ export const CHANNELS = {
       voiceSpeed: 1.0,
       captions: true,
       narration: true,
-      cta: { line1: 'FOLLOW FOR MORE', line2: 'Wildlife Daily' },
+      cta: { line1: 'FOLLOW FOR MORE', line2: 'NaturePulse' },
     },
     platforms: {
-      facebook:  { envKey: 'WILDLIFE_DAILY', enabled: true  },
-      instagram: { envKey: 'WILDLIFE_DAILY', enabled: false },
-      youtube:   { envKey: 'WILDLIFE_DAILY', enabled: false },
-      tiktok:    { envKey: 'WILDLIFE_DAILY', enabled: false },
+      facebook:  { envKey: 'NATURE_PULSE', enabled: true  },
+      instagram: { envKey: 'NATURE_PULSE', enabled: false },
+      youtube:   { envKey: 'NATURE_PULSE', enabled: false },
+      tiktok:    { envKey: 'NATURE_PULSE', enabled: false },
     },
-    watermarkFile: 'WildlifeDaily_Logo.png',
-    pageName: 'Wildlife Daily',
+    watermarkFile: 'NaturePulse_Logo.png',
+    pageName: 'NaturePulse',
   },
 
   'wildlife/listicle/EN': {
@@ -61,19 +61,19 @@ export const CHANNELS = {
       voiceSpeed: 1.05,
       captions: true,
       narration: true,
-      cta: { line1: 'FOLLOW FOR MORE', line2: 'Wildlife Daily' },
+      cta: { line1: 'FOLLOW FOR MORE', line2: 'NaturePulse' },
     },
     platforms: {
-      facebook:  { envKey: 'WILDLIFE_DAILY', enabled: true  },
-      instagram: { envKey: 'WILDLIFE_DAILY', enabled: false },
-      youtube:   { envKey: 'WILDLIFE_DAILY', enabled: false },
-      tiktok:    { envKey: 'WILDLIFE_DAILY', enabled: false },
+      facebook:  { envKey: 'NATURE_PULSE', enabled: true  },
+      instagram: { envKey: 'NATURE_PULSE', enabled: false },
+      youtube:   { envKey: 'NATURE_PULSE', enabled: false },
+      tiktok:    { envKey: 'NATURE_PULSE', enabled: false },
     },
-    watermarkFile: 'WildlifeDaily_Logo.png',
-    pageName: 'Wildlife Daily',
+    watermarkFile: 'NaturePulse_Logo.png',
+    pageName: 'NaturePulse',
   },
 
-  // ── Wild Cinema page (cinematic + silent) ─────────────────────────────────
+  // ── NatureFrame page (cinematic + silent) ─────────────────────────────────
   'wildlife/cinematic/EN': {
     niche: 'wildlife',
     style: 'cinematic',
@@ -95,16 +95,16 @@ export const CHANNELS = {
       voiceSpeed: 0.85,
       captions: true,
       narration: true,
-      cta: { line1: 'FOLLOW FOR MORE', line2: 'Wild Cinema' },
+      cta: { line1: 'FOLLOW FOR MORE', line2: 'NatureFrame' },
     },
     platforms: {
-      facebook:  { envKey: 'WILD_CINEMA', enabled: true  },
-      instagram: { envKey: 'WILD_CINEMA', enabled: false },
-      youtube:   { envKey: 'WILD_CINEMA', enabled: false },
-      tiktok:    { envKey: 'WILD_CINEMA', enabled: false },
+      facebook:  { envKey: 'NATURE_FRAME', enabled: true  },
+      instagram: { envKey: 'NATURE_FRAME', enabled: false },
+      youtube:   { envKey: 'NATURE_FRAME', enabled: false },
+      tiktok:    { envKey: 'NATURE_FRAME', enabled: false },
     },
-    watermarkFile: 'WildCinema_Logo.png',
-    pageName: 'Wild Cinema',
+    watermarkFile: 'NatureFrame_Logo.png',
+    pageName: 'NatureFrame',
   },
 
   'wildlife/silent/EN': {
@@ -128,16 +128,16 @@ export const CHANNELS = {
       voiceSpeed: null,
       captions: false,
       narration: false,
-      cta: { line1: 'FOLLOW FOR MORE', line2: 'Wild Cinema' },
+      cta: { line1: 'FOLLOW FOR MORE', line2: 'NatureFrame' },
     },
     platforms: {
-      facebook:  { envKey: 'WILD_CINEMA', enabled: true  },
-      instagram: { envKey: 'WILD_CINEMA', enabled: false },
-      youtube:   { envKey: 'WILD_CINEMA', enabled: false },
-      tiktok:    { envKey: 'WILD_CINEMA', enabled: false },
+      facebook:  { envKey: 'NATURE_FRAME', enabled: true  },
+      instagram: { envKey: 'NATURE_FRAME', enabled: false },
+      youtube:   { envKey: 'NATURE_FRAME', enabled: false },
+      tiktok:    { envKey: 'NATURE_FRAME', enabled: false },
     },
-    watermarkFile: 'WildCinema_Logo.png',
-    pageName: 'Wild Cinema',
+    watermarkFile: 'NatureFrame_Logo.png',
+    pageName: 'NatureFrame',
   },
 };
 

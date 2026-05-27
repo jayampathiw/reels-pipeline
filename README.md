@@ -49,7 +49,7 @@ A *channel* is `(niche, language)`. Each channel declares:
 - which platforms it publishes to
 - platform-specific credential keys
 
-The first channel is `wildlife/EN` posting to Facebook. Instagram, YouTube, and TikTok arrive in subsequent milestones.
+The first channels are `wildlife/factual/EN` + `wildlife/listicle/EN` (→ **NaturePulse** page) and `wildlife/cinematic/EN` + `wildlife/silent/EN` (→ **NatureFrame** page). Instagram, YouTube, and TikTok arrive in subsequent milestones.
 
 ## Status
 

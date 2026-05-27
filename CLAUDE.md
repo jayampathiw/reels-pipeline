@@ -68,7 +68,7 @@ A channel is `(niche, style, language)` keyed as `niche/style/LANG` (e.g. `wildl
 - **style** — `factual` | `cinematic` | `listicle` | `silent`
 - **language** — `en`, `fr`, `it`, …
 
-Multiple channels can publish to the same FB Page (and therefore share an `envKey`). At launch: `wildlife/factual/EN` + `wildlife/listicle/EN` both → `WILDLIFE_DAILY`; `wildlife/cinematic/EN` + `wildlife/silent/EN` both → `WILD_CINEMA`.
+Multiple channels can publish to the same FB Page (and therefore share an `envKey`). At launch: `wildlife/factual/EN` + `wildlife/listicle/EN` both → `NATURE_PULSE`; `wildlife/cinematic/EN` + `wildlife/silent/EN` both → `NATURE_FRAME`.
 
 Defined in `src/config/channels.js`. Adding a new channel = add a block; no other code changes needed.
 
@@ -156,10 +156,10 @@ R2_BUCKET_INBOX=reels-inbox
 R2_PUBLIC_BASE_URL=
 
 # per-page platform creds (suffix = envKey, shared by channels on the same page)
-FB_PAGE_ID_WILDLIFE_DAILY=
-FB_ACCESS_TOKEN_WILDLIFE_DAILY=
-FB_PAGE_ID_WILD_CINEMA=
-FB_ACCESS_TOKEN_WILD_CINEMA=
+FB_PAGE_ID_NATURE_PULSE=
+FB_ACCESS_TOKEN_NATURE_PULSE=
+FB_PAGE_ID_NATURE_FRAME=
+FB_ACCESS_TOKEN_NATURE_FRAME=
 # IG / YT / TT creds added in later milestones
 
 # content APIs
