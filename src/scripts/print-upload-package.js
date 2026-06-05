@@ -16,6 +16,8 @@
 //   node src/scripts/print-upload-package.js --caption-only 1 | xclip -selection clipboard
 
 import 'dotenv/config';
+import { existsSync } from 'fs';
+import { resolve } from 'path';
 import { getContentItem } from '../services/supabase.js';
 import { getChannel } from '../config/channels.js';
 
@@ -48,6 +50,13 @@ function printFull(item, channel) {
     console.log('  ⚠ NOT RENDERED YET — run: node src/scripts/generate-reel.js ' + item.id);
   }
   console.log('');
+
+  const srtPath = resolve('output/reels', `${item.id}.srt`);
+  if (existsSync(srtPath)) {
+    console.log('▶ CAPTIONS (.srt — upload separately to FB/YT to enable viewer subtitles)');
+    console.log(`  ${srtPath}`);
+    console.log('');
+  }
 
   console.log('▶ TITLE');
   console.log(`  ${item.title || '(none)'}`);

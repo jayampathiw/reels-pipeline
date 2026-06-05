@@ -32,13 +32,19 @@ async function processOne(id) {
     hashtags: item.hashtags,
   };
 
-  const needsAi = !item.ai_caption || (!item.narration_script && cfg.narration);
+  const aiCaptionValid = item.ai_caption && typeof item.ai_caption === 'object' && item.ai_caption.intro;
+  const needsAi = !aiCaptionValid || (!item.narration_script && cfg.narration);
   if (needsAi) {
     console.log('[gen] calling Claude...');
     const sourceClipsContext = (item.source_clips || []).map(c => ({
       description: c.description,
       durationSec: c.durationSec,
     }));
+    // Topic-first fields stored on clips during ingest (factual/listicle only)
+    const firstClip   = item.source_clips?.[0] || {};
+    const topicAnimal = firstClip.topicAnimal || null;
+    const topicAngle  = firstClip.topicAngle  || null;
+    if (topicAnimal) console.log(`[gen] topic: ${topicAnimal} — "${topicAngle}"`);
     ai = await generateReelContent({
       channelKey: item.channel_key,
       mode: cfg.mode,
@@ -46,7 +52,8 @@ async function processOne(id) {
       pageName: channel.pageName,
       durationSec: cfg.durationSec,
       clipCount: cfg.clipsPerReel,
-      topic: channel.niche,
+      topic: topicAnimal || channel.niche,
+      topicAngle,
       sourceClipsContext,
     });
     await updateContentItem(id, {
@@ -63,7 +70,8 @@ async function processOne(id) {
   const enriched = { ...item, ...ai };
 
   // ── 2. Render MP4 ─────────────────────────────────────────────────────────
-  const { outputPath, durationSec } = await renderReel(enriched, channel);
+  const { outputPath, durationSec, srtPath } = await renderReel(enriched, channel);
+  if (srtPath) console.log(`[gen] captions .srt → ${srtPath}`);
 
   // ── 3. Upload to R2 (skip cleanly if not configured) ──────────────────────
   let videoUrl = null;

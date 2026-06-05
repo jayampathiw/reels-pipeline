@@ -32,6 +32,64 @@ function extractJson(text) {
   return candidate.slice(start, end + 1).trim();
 }
 
+export const TOPIC_FIRST_MODES = new Set(['factual', 'listicle']);
+
+// Ask Claude to pick a specific animal + Pexels search query + angle before ingest.
+// No system prompt / no caching — we want variety every call.
+export async function pickTopic({ niche, mode, language }) {
+  const isVisual = mode === 'silent' || mode === 'cinematic';
+
+  const prompt = isVisual ? [
+    `You are a wildlife content strategist for a cinematic/silent nature channel.`,
+    `Pick ONE specific cute, small, or visually captivating animal category for a ${mode} reel.`,
+    '',
+    'Return a JSON object with EXACTLY these 2 fields:',
+    '  animal:      the animal category (e.g. "baby squirrels", "hedgehogs", "fox cubs", "baby otters")',
+    '  searchQuery: 3-5 words for Pexels video search (e.g. "baby squirrel forest cute")',
+    '',
+    'Rules:',
+    '  - Focus on small, cute, endearing animals: rodents, baby animals, fox cubs, ducklings, baby deer, etc.',
+    '  - All clips will be of this ONE category — keep it specific enough for consistent results on Pexels',
+    '  - Animals must be commonly available as portrait stock footage',
+    `  - Niche: ${niche} | Mode: ${mode} | Language: ${language}`,
+    '  - Rotate widely: squirrels, hedgehogs, otters, ducklings, fox cubs, fawns, chipmunks, rabbit kits, etc.',
+    '  - Return JSON only. No markdown fences, no prose.',
+  ].join('\n') : [
+    `You are a wildlife content strategist. Pick ONE specific animal for a short-form ${mode}-style wildlife reel.`,
+    '',
+    'Return a JSON object with EXACTLY these 3 fields:',
+    '  animal:      common name of the animal (e.g. "cheetah", "mantis shrimp", "axolotl")',
+    '  searchQuery: 3-5 words optimised for Pexels video search (e.g. "cheetah running savanna wildlife")',
+    '  angle:       the specific interesting angle to lead with (e.g. "accelerates from 0 to 70mph in 3 seconds")',
+    '',
+    'Rules:',
+    '  - Pick animals commonly available as stock footage (mammals, birds, reptiles, large marine animals)',
+    '  - Avoid extremely rare or microscopic animals that are hard to film',
+    `  - For listicle: animal must have at least 5 surprising facts`,
+    `  - For factual: angle must yield one striking hook plus 3 supporting facts`,
+    `  - Niche: ${niche} | Mode: ${mode} | Language: ${language}`,
+    '  - Vary widely — do not default to lions, elephants, or cheetahs every time',
+    '  - Return JSON only. No markdown fences, no prose.',
+  ].join('\n');
+
+  const raw = await getClient().messages.create({
+    model: MODEL,
+    max_tokens: 200,
+    messages: [{ role: 'user', content: prompt }],
+  });
+
+  const res = parseResponse(raw);
+  const text = res.content?.[0]?.type === 'text' ? res.content[0].text : '';
+  const jsonStr = extractJson(text);
+  if (!jsonStr) throw new Error(`pickTopic: no JSON in response: ${text.slice(0, 200)}`);
+
+  const parsed = JSON.parse(jsonStr);
+  if (!parsed.animal || !parsed.searchQuery) {
+    throw new Error(`pickTopic: missing fields. Got: ${JSON.stringify(parsed)}`);
+  }
+  return parsed;
+}
+
 // One large system prompt covering all 4 modes. Kept intentionally long (>2048 tokens)
 // to qualify for ephemeral prompt caching. Same cache entry is reused across reels
 // in the same 5-minute window regardless of which mode is requested.
@@ -159,18 +217,58 @@ DO NOT put cta at the top level — it belongs INSIDE ai_caption.
 DO NOT wrap the JSON in markdown code fences.
 DO NOT add prose before or after the JSON.
 
-Here is a complete and correct response for a factual-mode wildlife reel. Match this shape exactly:
+Here are complete and correct responses for each mode. Match these shapes exactly:
 
+FACTUAL MODE:
 {
   "title": "Lions: 30 Seconds of Power",
   "description": "Three surprising facts about Africa's most iconic predator.",
-  "narration_script": "Lions can roar so loud you can hear them eight kilometres away. A male lion eats up to seven kilos of meat a day. Lionesses do ninety percent of the hunting. A pride can have up to thirty members. Follow Wildlife Daily for more.",
+  "narration_script": "Lions can roar so loud you can hear them eight kilometres away. A male lion eats up to seven kilos of meat a day. Lionesses do ninety percent of the hunting. Follow Wildlife Daily for more.",
   "ai_caption": {
     "intro": "Lions can roar 8 kilometres away. That's louder than a chainsaw.",
     "question": "Would you survive hearing one from 100 metres away — yes or no?",
     "cta": "👉 Follow Wildlife Daily for more wildlife — every day."
   },
   "hashtags": ["Lions", "Wildlife", "Nature", "WildlifeDaily", "BigCats"]
+}
+
+CINEMATIC MODE:
+{
+  "title": "When the Savanna Holds Its Breath",
+  "description": "A slow, atmospheric reel following a lioness through the golden hour.",
+  "narration_script": "The grass bends before she does. A lioness moves through last light like water finding its way. She pauses — not from doubt, but because she already knows. The savanna does not hurry. Neither does she.",
+  "ai_caption": {
+    "intro": "There's a moment, just before dusk, when the savanna holds its breath.",
+    "question": "Could you spend one night out here — yes, no, or only with a guide?",
+    "cta": "👉 Follow NatureFrame for cinematic wildlife — every frame."
+  },
+  "hashtags": ["Lioness", "Wildlife", "CinematicNature", "NatureFrame", "GoldenHour"]
+}
+
+LISTICLE MODE:
+{
+  "title": "5 Facts About Elephants That Will Surprise You",
+  "description": "A countdown of the most surprising elephant facts.",
+  "narration_script": "5 amazing facts about elephants. Number 5: they can hear with their feet, sensing vibrations through the ground. Number 4: they mourn their dead, returning to bones for years. Number 3: a trunk has over 40,000 muscles. Number 2: they sleep just two hours a night. Number 1: they are the only animal that cannot jump. Follow NaturePulse for more.",
+  "ai_caption": {
+    "intro": "5 things you never knew about elephants. Number one will surprise you.",
+    "question": "Which fact shocked you the most — 5, 3, or 1?",
+    "cta": "👉 Follow NaturePulse for more wildlife — every day."
+  },
+  "hashtags": ["Elephants", "WildlifeFacts", "NaturePulse", "Wildlife", "Nature"]
+}
+
+SILENT MODE:
+{
+  "title": "Dusk on the Serengeti",
+  "description": "A wordless reel of wildlife at golden hour — no narration, just nature.",
+  "narration_script": null,
+  "ai_caption": {
+    "intro": "Just three minutes in the life of a lioness. No words. Just the savanna.",
+    "question": "Would you spend an hour just watching — yes, no, or only if it were live?",
+    "cta": "👉 Follow NatureFrame for cinematic wildlife — every frame."
+  },
+  "hashtags": ["SilentNature", "Wildlife", "NatureFrame", "Serengeti", "GoldenHour"]
 }
 
 If you cannot fulfil the request for safety reasons, return:
@@ -184,7 +282,8 @@ export async function generateReelContent({
   pageName,             // 'Wildlife Daily'
   durationSec,          // 30
   clipCount,            // 5
-  topic,                // 'wildlife' (the niche) or a more specific topic
+  topic,                // specific animal (topic-first) or niche fallback
+  topicAngle,           // specific angle/hook picked during ingest (factual/listicle only)
   sourceClipsContext,   // array of { description, durationSec } — optional, hints to Claude
 }) {
   const user = [
@@ -195,10 +294,16 @@ export async function generateReelContent({
     `Reel duration: ${durationSec}s`,
     `Number of clips: ${clipCount}`,
     `Topic: ${topic}`,
+    topicAngle ? `Angle to focus on: ${topicAngle}` : null,
     sourceClipsContext?.length
       ? `Source clip hints:\n${sourceClipsContext.map((c, i) => `  ${i + 1}. ${c.description || 'wildlife clip'} (${c.durationSec}s)`).join('\n')}`
       : null,
     '',
+    'IMPORTANT: Return a JSON object with EXACTLY these 5 top-level keys and NO others:',
+    '  title, description, narration_script, ai_caption, hashtags',
+    `ai_caption must be an object: { "intro": string, "question": string, "cta": string }`,
+    mode === 'silent' ? 'narration_script must be null (silent mode has no voice-over).' : null,
+    'Do NOT add clip lists, editing_notes, style, concept, channel, mode, or any other keys.',
     'Return the JSON object now.',
   ].filter(Boolean).join('\n');
 
@@ -235,6 +340,36 @@ export async function generateReelContent({
   }
 
   if (parsed.error) throw new Error(`Claude refused: ${parsed.error}`);
+
+  // ── Normalise schema drift ────────────────────────────────────────────────
+  // The model sometimes returns alternative key names or wrong value types.
+  // Coerce everything to the canonical shape before validation.
+
+  // narration_script: accept voiceover.full_script or voiceover string
+  if (!parsed.narration_script && parsed.voiceover?.full_script) {
+    parsed.narration_script = parsed.voiceover.full_script;
+  }
+  if (!parsed.narration_script && typeof parsed.voiceover === 'string') {
+    parsed.narration_script = parsed.voiceover;
+  }
+
+  // ai_caption: accept top-level caption string, then coerce string → object
+  if (!parsed.ai_caption && parsed.caption) parsed.ai_caption = parsed.caption;
+  if (typeof parsed.ai_caption === 'string') {
+    parsed.ai_caption = {
+      intro:    parsed.ai_caption,
+      question: parsed.question || '',
+      cta:      parsed.cta || `👉 Follow ${pageName} for more.`,
+    };
+  }
+
+  // hashtags: coerce space-separated string → array, then strip '#' prefixes
+  if (typeof parsed.hashtags === 'string') {
+    parsed.hashtags = parsed.hashtags.split(/\s+/).filter(Boolean);
+  }
+  if (Array.isArray(parsed.hashtags)) {
+    parsed.hashtags = parsed.hashtags.map(h => h.replace(/^#+/, '')).filter(Boolean);
+  }
 
   const required = ['title', 'ai_caption', 'hashtags'];
   for (const k of required) {

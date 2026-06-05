@@ -1,5 +1,5 @@
 import { spawn } from 'child_process';
-import { mkdirSync, existsSync, createWriteStream } from 'fs';
+import { mkdirSync, existsSync, createWriteStream, copyFileSync, writeFileSync } from 'fs';
 import { resolve, dirname, join } from 'path';
 import { fileURLToPath } from 'url';
 import axios from 'axios';
@@ -36,19 +36,28 @@ function ffprobeDuration(filePath) {
   });
 }
 
-function escapeText(s) {
-  return (s || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/:/g, '\\:');
-}
 
-async function downloadFile(url, destPath) {
-  const writer = createWriteStream(destPath);
-  const res = await axios.get(url, { responseType: 'stream', timeout: 120_000 });
-  await new Promise((resolveDl, reject) => {
-    res.data.pipe(writer);
-    writer.on('finish', resolveDl);
-    writer.on('error', reject);
-    res.data.on('error', reject);
-  });
+async function downloadFile(url, destPath, attempt = 1) {
+  const { unlinkSync } = await import('fs');
+  try {
+    const writer = createWriteStream(destPath);
+    const res = await axios.get(url, { responseType: 'stream', timeout: 120_000 });
+    await new Promise((resolveDl, reject) => {
+      res.data.pipe(writer);
+      writer.on('finish', resolveDl);
+      writer.on('error', reject);
+      res.data.on('error', reject);
+    });
+  } catch (err) {
+    try { unlinkSync(destPath); } catch (_) {}
+    if (attempt < 3) {
+      const delay = attempt * 3000;
+      console.warn(`[reel] download attempt ${attempt} failed (${err.code || err.message}) — retrying in ${delay / 1000}s`);
+      await new Promise(r => setTimeout(r, delay));
+      return downloadFile(url, destPath, attempt + 1);
+    }
+    throw err;
+  }
 }
 
 function assertAsset(path, label) {
@@ -151,35 +160,52 @@ export async function renderReel(contentItem, channel) {
   const concatInputs = Array.from({ length: clipPaths.length }, (_, i) => `[vr${i}]`).join('');
   f.push(`${concatInputs}concat=n=${clipPaths.length}:v=1:a=0[vconcat]`);
 
-  // Burn subtitles (captions modes only)
+  // Captions are NOT burned in — Whisper .srt is kept for upload as a separate
+  // subtitle track on Facebook / YouTube. Viewer can toggle captions on/off.
   let vCurrent = 'vconcat';
-  if (srtPath) {
-    const srtEsc = srtPath.replace(/\\/g, '/').replace(/:/g, '\\:');
-    const subStyle = 'FontName=Arial,FontSize=14,PrimaryColour=&H00FFFFFF,OutlineColour=&H00000000,Outline=2,MarginV=120,MarginL=40,MarginR=40,Alignment=2';
-    f.push(`[${vCurrent}]subtitles='${srtEsc}':force_style='${subStyle}'[vsub]`);
-    vCurrent = 'vsub';
-  }
 
   // Watermark (bottom-right, 110px wide)
   f.push(`[${logoIdx}:v]scale=110:-1[logo]`);
   f.push(`[${vCurrent}][logo]overlay=x=W-w-32:y=H-h-32:format=auto[vwm]`);
   vCurrent = 'vwm';
 
-  // CTA overlay — appears after voice ends (narration modes) or after 60% of duration (silent)
-  if (narration) {
-    const ctaEnable = `gt(t\\,${voiceDur.toFixed(2)})`;
-    const cta1 = escapeText(cta.line1);
-    const cta2 = escapeText(cta.line2);
-    f.push(`[${vCurrent}]drawtext=fontfile=${FONT}:text=${cta1}:fontsize=68:fontcolor=white:x=(w-tw)/2:y=(h/2)-50:borderw=3:bordercolor=black@0.85:enable=${ctaEnable}[vc1]`);
-    f.push(`[vc1]drawtext=fontfile=${FONT}:text=${cta2}:fontsize=46:fontcolor=white:x=(w-tw)/2:y=(h/2)+30:borderw=3:bordercolor=black@0.85:enable=${ctaEnable}[vout]`);
+  // CTA overlay — write lines to temp files to avoid FFmpeg escaping issues with
+  // apostrophes and other special characters in text= values.
+  const cta1File = join(workDir, 'cta1.txt');
+  const cta2File = join(workDir, 'cta2.txt');
+  writeFileSync(cta1File, cta.line1);
+  writeFileSync(cta2File, cta.line2);
+
+  const ctaStyle     = cfg.ctaStyle || null;
+  const ctaStart     = narration ? voiceDur : Math.max(0, totalDur - 4);
+  const ctaEnable    = `'gte(t,${ctaStart.toFixed(2)})'`;
+  const hasSubscribe = ctaStyle?.subscribeLine != null;
+
+  const line1FontColor   = ctaStyle?.line1FontColor   || 'white';
+  const line1BorderColor = ctaStyle?.line1BorderColor || 'black@0.85';
+  const line2FontColor   = ctaStyle?.line2FontColor   || 'white';
+  const line2BorderColor = ctaStyle?.line2BorderColor || 'black@0.85';
+
+  // Returns :alpha='...' fade-in expression starting at `start`, over 0.7s
+  const fadeAlpha = (start) =>
+    ctaStyle?.animation === 'fadein'
+      ? `:alpha='if(lt(t,${(start + 0.7).toFixed(2)}),(t-${start.toFixed(2)})/0.7,1)'`
+      : '';
+
+  if (hasSubscribe) {
+    const cta3File = join(workDir, 'cta3.txt');
+    writeFileSync(cta3File, ctaStyle.subscribeLine);
+    const subStart       = ctaStart + 0.5;
+    const subEnable      = `'gte(t,${subStart.toFixed(2)})'`;
+    const subFontColor   = ctaStyle.subscribeLineFontColor   || 'white';
+    const subBorderColor = ctaStyle.subscribeLineBorderColor || 'black@0.85';
+
+    f.push(`[${vCurrent}]drawtext=fontfile=${FONT}:textfile=${cta1File}:fontsize=68:fontcolor=${line1FontColor}:x=(w-tw)/2:y=(h/2)-80:borderw=3:bordercolor=${line1BorderColor}${fadeAlpha(ctaStart)}:enable=${ctaEnable}[vc1]`);
+    f.push(`[vc1]drawtext=fontfile=${FONT}:textfile=${cta2File}:fontsize=46:fontcolor=${line2FontColor}:x=(w-tw)/2:y=(h/2)+5:borderw=3:bordercolor=${line2BorderColor}${fadeAlpha(ctaStart)}:enable=${ctaEnable}[vc2]`);
+    f.push(`[vc2]drawtext=fontfile=${FONT}:textfile=${cta3File}:fontsize=40:fontcolor=${subFontColor}:x=(w-tw)/2:y=(h/2)+75:borderw=3:bordercolor=${subBorderColor}${fadeAlpha(subStart)}:enable=${subEnable}[vout]`);
   } else {
-    // silent mode: CTA appears in the last 4 seconds
-    const ctaStart = Math.max(0, totalDur - 4);
-    const ctaEnable = `gt(t\\,${ctaStart.toFixed(2)})`;
-    const cta1 = escapeText(cta.line1);
-    const cta2 = escapeText(cta.line2);
-    f.push(`[${vCurrent}]drawtext=fontfile=${FONT}:text=${cta1}:fontsize=68:fontcolor=white:x=(w-tw)/2:y=(h/2)-50:borderw=3:bordercolor=black@0.85:enable=${ctaEnable}[vc1]`);
-    f.push(`[vc1]drawtext=fontfile=${FONT}:text=${cta2}:fontsize=46:fontcolor=white:x=(w-tw)/2:y=(h/2)+30:borderw=3:bordercolor=black@0.85:enable=${ctaEnable}[vout]`);
+    f.push(`[${vCurrent}]drawtext=fontfile=${FONT}:textfile=${cta1File}:fontsize=68:fontcolor=${line1FontColor}:x=(w-tw)/2:y=(h/2)-50:borderw=3:bordercolor=${line1BorderColor}${fadeAlpha(ctaStart)}:enable=${ctaEnable}[vc1]`);
+    f.push(`[vc1]drawtext=fontfile=${FONT}:textfile=${cta2File}:fontsize=46:fontcolor=${line2FontColor}:x=(w-tw)/2:y=(h/2)+30:borderw=3:bordercolor=${line2BorderColor}${fadeAlpha(ctaStart)}:enable=${ctaEnable}[vout]`);
   }
 
   // Audio
@@ -211,5 +237,13 @@ export async function renderReel(contentItem, channel) {
   const finalDur = await ffprobeDuration(outPath);
   console.log(`[reel] Done → ${outPath} (${finalDur.toFixed(1)}s)`);
 
-  return { outputPath: outPath, durationSec: Math.round(finalDur) };
+  // Copy .srt to output dir so it persists alongside the MP4 for platform upload
+  let outputSrtPath = null;
+  if (srtPath && existsSync(srtPath)) {
+    outputSrtPath = join(OUTPUT_DIR, `${contentItem.id}.srt`);
+    copyFileSync(srtPath, outputSrtPath);
+    console.log(`[reel] Captions → ${outputSrtPath}`);
+  }
+
+  return { outputPath: outPath, durationSec: Math.round(finalDur), srtPath: outputSrtPath };
 }

@@ -179,6 +179,12 @@ Same baseline rules as the news pipeline:
 
 🟢 **Render leg complete end-to-end** (2026-05-26). Pexels → Claude (Opus 4.7 via oneprovider.dev) → TTS (Kokoro) → Whisper → FFmpeg → R2 hosted URL all verified working. First reel rendered as `content_item id=1`, hosted at `pub-*.r2.dev/reels/1/1.mp4`.
 
+🟢 **Brand assets complete** (2026-05-27). NaturePulse and NatureFrame: logos, watermark PNGs (transparent background, verified via FFmpeg overlay test), and Facebook banners (820×462px). All in `assets/logos/`. Watermarks auto-applied by `reel.js` at 110px bottom-right on every render.
+
+🟡 **NaturePulse watermark pending minor update.** Current watermark is the full oak leaf. Agreed to swap to the simpler angled leaf+pulse icon used in the banner — pending standalone PNG export from design tool.
+
+🟡 **Facebook pages not yet created.** NaturePulse and NatureFrame pages need to be set up on Facebook with brand assets uploaded and page IDs added to `.env`.
+
 🟡 **FB API publish deferred.** User chose to manually upload via FB web composer until cadence justifies API automation. Publisher code is written and tested-by-shape; activating it is a flip-the-switch task documented in [docs/architecture.md](docs/architecture.md) decisions log.
 
 ## Daily workflow (manual-upload mode)

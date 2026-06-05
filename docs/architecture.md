@@ -134,15 +134,18 @@ The renderer targets the strictest common denominator: 9:16 at 1080x1920, ≤60s
 ### M1 — Schema + skeleton (this scaffold)
 Repo + DB migration + channel registry + .env.example. No working pipeline. **(current state)**
 
-### M2 — Wildlife on Facebook — **IN PROGRESS (render leg complete)**
+### M2 — Wildlife on Facebook — **IN PROGRESS (render + brand assets complete)**
 - ✅ Pexels fetcher (verified 2026-05-26 — 14 clips → 5 selected)
 - ✅ Claude narration + caption + hashtag generation (verified with Opus 4.7 via oneprovider.dev; needed worked-example in prompt before Opus stopped inventing extra keys)
 - ✅ `reel.js` renderer: clip concat + TTS + Whisper captions + music + watermark + CTA (verified — content_item 1 → output/reels/1.mp4, 18.9s, 1080x1920 9:16)
 - ✅ R2 upload made optional in generate-reel (graceful skip when env vars missing)
 - ✅ CLI scripts: `ingest`, `generate-reel`, `publish` all wired
 - ✅ R2 storage adapter — bucket provisioned, upload verified end-to-end (2026-05-26)
+- ✅ Brand assets complete (2026-05-27) — NaturePulse and NatureFrame logos, watermark PNGs (transparent background), Facebook banners. Watermarks verified via FFmpeg overlay test. See `assets/logos/`.
+- ⏸️ NaturePulse watermark icon — to be updated to the angled leaf mark used in the banner (pending PNG export from design tool). Current watermark is the full oak leaf.
+- ⏸️ Facebook pages — NaturePulse and NatureFrame pages to be created on Facebook, brand assets uploaded, page IDs added to `.env`.
 - ⏸️ Facebook publisher — code written, **API automation deferred** (2026-05-26). User chose manual upload for initial reels. Revisit once content cadence justifies API automation.
-- **Exit criteria:** one wildlife reel rendered and posted to a real FB page. (Render: ✅. R2 hosting: ✅. Publish: manual for now, API publish deferred.)
+- **Exit criteria:** one wildlife reel rendered and posted to a real FB page. (Render: ✅. R2 hosting: ✅. Brand assets: ✅. FB pages: pending. Publish: manual for now, API publish deferred.)
 
 ### M3 — Instagram Reels
 Same Graph API as FB. New publisher file, ~1 day of work including IG container/publish dance.
@@ -173,3 +176,7 @@ Open. Decide based on what M2-M6 teaches.
 | 2026-05-26 | FB API publish deferred — manual upload first | Decision was to validate content quality + engagement before investing in FB Developer app setup, Page tokens, and rate-limit handling. The publisher code is written and tested-by-shape; activating it is later flip-the-switch work, not new development. Workflow until then: render via `generate-reel.js`, upload from R2 URL via FB's web uploader. |
 | 2026-05-26 | Per-platform status columns, not a publications table | Simpler at 4 platforms. Revisit if platform list grows. |
 | 2026-05-26 | Don't pre-extract shared code from news repo | Duplicate first, extract when a second consumer actually exists. |
+| 2026-05-27 | Two distinct brand identities across one niche | NaturePulse (bold, gold/amber, factual+listicle) and NatureFrame (light, teal, cinematic+silent). Same niche, different brand voice per page. Keeps each page's content coherent for the FB algorithm. |
+| 2026-05-27 | Watermarks as transparent PNG, not JPEG | FFmpeg overlay filter requires alpha channel. JPEG solid backgrounds render as a coloured box on video. Logos processed via ImageMagick flood-fill (NaturePulse) and PIL circular crop (NatureFrame). |
+| 2026-05-27 | NaturePulse icon = angled leaf + pulse line | Simpler and more scalable at 110px watermark size than the full oak leaf. Matches the brand mark already used in the Facebook banner — profile pic, cover, and watermark share one icon. Pending swap once standalone PNG exported from design tool. |
+| 2026-05-27 | Facebook banner design at 820×462px | Facebook crops to 640×360 on mobile. Centre 820×312px is the safe zone for text/logos. Designing at full 820×462 prevents letterboxing on mobile. |
